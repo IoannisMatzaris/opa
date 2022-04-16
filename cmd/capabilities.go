@@ -66,7 +66,12 @@ Print the capabilities of a specific version in json
   
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doCapabilities(capabilitiesParams)
+			cs, err := doCapabilities(capabilitiesParams)
+			if err != nil {
+				return err
+			}
+			fmt.Println(cs)
+			return nil
 		},
 	}
 	capabilitiesCommand.Flags().BoolVarP(&capabilitiesParams.showVersions, "versions", "", false, "list capabilities versions")
@@ -80,17 +85,18 @@ Print the capabilities of a specific version in json
 	RootCommand.AddCommand(capabilitiesCommand)
 }
 
-func doCapabilities(params capabilitiesParams) error {
+func doCapabilities(params capabilitiesParams) (string, error) {
 	if params.showVersions {
 		cvs, err := ast.LoadCapabilitiesVersions()
 		if err != nil {
-			return err
+			return "", err
 		}
 
+		var t string
 		for _, cv := range cvs {
-			fmt.Println(cv)
+			t = t + cv + "\n"
 		}
-		return nil
+		return t, nil
 	}
 
 	var c *ast.Capabilities
@@ -102,10 +108,10 @@ func doCapabilities(params capabilitiesParams) error {
 	if c != nil {
 		bs, err := util.MarshalJSON(c)
 		if err != nil {
-			return err
+			return "", err
 		}
-		fmt.Println(string(bs))
-		return nil
+
+		return string(bs), nil
 	}
-	return fmt.Errorf("please use a flag")
+	return "", fmt.Errorf("please use a flag")
 }

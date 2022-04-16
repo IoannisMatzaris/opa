@@ -12,17 +12,17 @@ func TestCapabilitiesExitCode(t *testing.T) {
 	t.Run("test with --versions", func(t *testing.T) {
 		params := newCapabilitiesParams()
 		params.showVersions = true
-		err := doCapabilities(params)
+		_, err := doCapabilities(params)
 		if err != nil {
-			t.Fatal("expected success but got error")
+			t.Fatal("expected success but got an error", err)
 		}
 	})
 
 	t.Run("test with no arguments", func(t *testing.T) {
 		params := newCapabilitiesParams()
-		err := doCapabilities(params)
+		_, err := doCapabilities(params)
 		if err == nil {
-			t.Fatalf("expected error but err == nil")
+			t.Fatalf("expected error")
 		}
 	})
 
