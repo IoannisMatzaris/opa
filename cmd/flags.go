@@ -126,8 +126,12 @@ func addBundleVerificationExcludeFilesFlag(fs *pflag.FlagSet, excludeNames *[]st
 	fs.StringSliceVarP(excludeNames, "exclude-files-verify", "", []string{}, "set file names to exclude during bundle verification")
 }
 
-func addCapabilitiesFlag(fs *pflag.FlagSet, f *capabilitiesFlag) {
-	fs.VarP(f, "capabilities", "", "set capabilities.json file path")
+func addCapabilitiesFlag(fs *pflag.FlagSet, f *capabilitiesFlag, usage ...string) {
+	if len(usage) == 1 {
+		fs.VarP(f, "capabilities", "", usage[0])
+	} else {
+		fs.VarP(f, "capabilities", "", "set specific capabilities version (e.g. semantic version) or capabilities.json file path")
+	}
 }
 
 func addPartialFlag(fs *pflag.FlagSet, partial *bool, value bool) {
@@ -170,8 +174,8 @@ func setExplainFlag(fs *pflag.FlagSet, explain *util.EnumFlag) {
 }
 
 type capabilitiesFlag struct {
-	C    *ast.Capabilities
-	path string
+	C             *ast.Capabilities
+	pathOrVersion string
 }
 
 func newcapabilitiesFlag() *capabilitiesFlag {
@@ -187,18 +191,25 @@ func (f *capabilitiesFlag) Type() string {
 }
 
 func (f *capabilitiesFlag) String() string {
-	return f.path
+	return f.pathOrVersion
 }
 
 func (f *capabilitiesFlag) Set(s string) error {
-	f.path = s
-	fd, err := os.Open(s)
-	if err != nil {
-		return err
+	f.pathOrVersion = s
+	fd, errPath := os.Open(s)
+	if errPath == nil {
+		defer fd.Close()
+
+		f.C, errPath = ast.LoadCapabilitiesJSON(fd)
 	}
-	defer fd.Close()
-	f.C, err = ast.LoadCapabilitiesJSON(fd)
-	return err
+
+	var errVersion error
+	f.C, errVersion = ast.LoadCapabilitiesVersionJSON(s)
+	if errVersion != nil && errPath != nil {
+		return fmt.Errorf("\n%v\nor\n%v", errPath, errVersion)
+	}
+	return nil
+
 }
 
 type stringptrFlag struct {
