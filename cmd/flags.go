@@ -200,7 +200,9 @@ func (f *capabilitiesFlag) Set(s string) error {
 	if errPath == nil {
 		defer fd.Close()
 
-		f.C, errPath = ast.LoadCapabilitiesJSON(fd)
+		var err error
+		f.C, err = ast.LoadCapabilitiesJSON(fd)
+		return err
 	}
 
 	var errVersion error
